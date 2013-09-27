@@ -1,0 +1,3 @@
+HeaderBar headerbar.qml
+Menu menu.qml
+MainScreen ../main.qml

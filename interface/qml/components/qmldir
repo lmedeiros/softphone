@@ -1,0 +1,13 @@
+Spinbox spinbox.qml
+Button button.qml
+MenuButton menubutton.qml
+ScrollBar scrollbar.qml
+MainScreen ../main.qml
+Keypad keypad.qml
+ScrollBar scrollbar.qml
+Textbox textbox.qml
+Combobox combobox.qml
+Messagebox messagebox.qml
+Volumeslider volumeslider.qml
+Keypadbutton keypadbutton.qml
+PhoneActiveButton phoneactivebutton.qml
