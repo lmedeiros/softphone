@@ -92,11 +92,13 @@ void ScreenPhone::playDTMF(pjsua_call_id call_id, const char *digits)
             d[i].off_msec = 50;
         }
         d[i].volume = 0;
-        qDebug() << "LOOP Playing DTMF " << digits;
+        //qDebug() << "LOOP Playing DTMF " << digits;
     }
 
     pjmedia_tonegen_play_digits(cd->tonegen, count, d, 0);
 }
+
+
 
 void ScreenPhone::playbackAudio(const QString& path)
 {
@@ -116,9 +118,7 @@ void ScreenPhone::sendDTMF(pjsua_call_id call_id, const char* digits)
     pj_str_t pj_digits = pj_str((char*)p_digits);
     pjsua_call_info call_info;
 
-    qDebug() << "Trying to play dtmf " << digits;
-
-    playDTMF(call_id, (char*)p_digits);
+    //qDebug() << "Trying to play dtmf " << digits;
 
     if(call_id>=0)
     {
@@ -129,6 +129,10 @@ void ScreenPhone::sendDTMF(pjsua_call_id call_id, const char* digits)
             pjsua_call_dial_dtmf(call_id, &pj_digits);
             return;
         }
+    }
+    else
+    {
+        playDTMF(call_id, (char*)p_digits);
     }
 }
 

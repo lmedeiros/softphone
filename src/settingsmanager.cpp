@@ -163,6 +163,28 @@ bool SettingsManager::writeSettings()
     return createXml();
 }
 
+QHash<QString, QVariant> SettingsManager::videoDeviceList()
+{
+    QHash<QString, QVariant> deviceList;
+
+    qDebug() << "Total of video devices: " << QString::number(pjsua_vid_dev_count());
+
+    unsigned count = 64;
+    pjmedia_vid_dev_info vid_dev_info[64];
+    pjsua_vid_enum_devs(vid_dev_info, &count);
+
+    for (unsigned i=0;i<count;i++)
+    {
+        if (vid_dev_info[i].fmt_cnt && (vid_dev_info[i].dir==PJMEDIA_DIR_ENCODING || vid_dev_info[i].dir==PJMEDIA_DIR_ENCODING_DECODING))
+        {
+            deviceList.insert(QString::number(vid_dev_info[i].id), QString(vid_dev_info[i].name));
+            qDebug() << "Device List Video :::::::::: " << "id: (" << QString::number(vid_dev_info[i].id) << ")" << QString(vid_dev_info[i].name);
+        }
+    }
+
+    return deviceList;
+}
+
 QHash<QString, QVariant> SettingsManager::deviceList(bool is_input)
 {
     QHash<QString, QVariant> deviceList;

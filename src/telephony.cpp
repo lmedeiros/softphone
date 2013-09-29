@@ -500,6 +500,10 @@ bool Telephony::registerAccount(const QString &account)
 
     pjsua_acc_config cfg;
 
+    cfg.vid_in_auto_show = PJ_TRUE;
+    cfg.vid_out_auto_transmit = PJ_TRUE;
+    cfg.vid_wnd_flags = PJMEDIA_VID_DEV_WND_BORDER | PJMEDIA_VID_DEV_WND_RESIZABLE;
+
     pjsua_acc_config_default(&cfg);
 
     cfg.allow_via_rewrite=PJ_FALSE;

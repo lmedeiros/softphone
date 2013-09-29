@@ -20,6 +20,12 @@ MainScreen
             settingsLoading.source = "config.qml";
         }
 
+        if(m_activeScreen === "Video")
+        {
+            settingsLoading.source = "video.qml";
+        }
+
+
         if(m_activeScreen === "Info")
         {
             settingsLoading.source = "info.qml";

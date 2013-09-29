@@ -12,8 +12,8 @@ DEPLOYMENTFOLDERS = folder_qml folder_js folder_assets
 
 
 INCLUDEPATH += ../../src/multimedia ../../src/multimedia/audio
-CONFIG += release app_bundle
-QT += xml multimedia sql network widgets
+CONFIG += release app_bundle static
+QT += xml multimedia sql network widgets opengl
 
 win32 {
     PJSIP_DIR = $$_PRO_FILE_PWD_/lib/win32/pjsip
@@ -58,6 +58,9 @@ INCLUDEPATH +=  $$SOURCEDIR \
     $$PJSIP_DIR/pjlib/include \
     $$PJSIP_DIR/pjlib-util/include \
     $$PJSIP_DIR/third_party/openssl/include/openssl \
+    C:\ffmpeg-dev-lib\include \
+    C:\SDL1.3-devlib\1.3\include \
+
 
 #PJSIP Libs
 LIBS += $$PJSIP_LIB_PJSIP_DIR/libpjsua-$$PJSIP_TARGET \
@@ -74,7 +77,8 @@ LIBS += $$PJSIP_LIB_PJSIP_DIR/libpjsua-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJLIB_DIR/libpj-$$PJSIP_TARGET \
 
 #PJSIP Third Party
-LIBS += $$PJSIP_LIB_PJTHIRD_DIR/libportaudio-$$PJSIP_TARGET \
+LIBS += $$PJSIP_LIB_PJTHIRD_DIR/libbaseclasses-$$PJSIP_TARGET \
+        $$PJSIP_LIB_PJTHIRD_DIR/libportaudio-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libgsmcodec-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libilbccodec-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libspeex-$$PJSIP_TARGET \
@@ -108,6 +112,7 @@ mac: LIBS += $$PJSIP_LIB_PJTHIRD_DIR/libopus-$$PJSIP_TARGET \
 
 win32: LIBS += -lwinmm \
     -lole32 \
+    -loleaut32 \
     -lws2_32 \
     -lwsock32 \
     -lgdi32 \
@@ -125,6 +130,15 @@ win32: LIBS += -lwinmm \
     -LC:\openssl\lib \
     -lssleay32MT \
     -llibeay32MT \
+    -LC:\ffmpeg-dev-lib\lib \
+    -lavutil \
+    -lavcodec \
+    -lavdevice \
+    -lavfilter \
+    -lavformat \
+    -lswscale \
+    -LC:\SDL1.3-devlib\1.3\lib \
+    -lsdl2 \
 
 HEADERS += \
     src/headers/controller.h \
@@ -136,7 +150,7 @@ HEADERS += \
     src/headers/screencontacts.h \
     src/headers/screenaccounts.h \
     src/headers/dbtablemobel.h \
-    src/headers/database.h
+    src/headers/database.h \
 
 SOURCES += src/main.cpp \
     src/controller.cpp \

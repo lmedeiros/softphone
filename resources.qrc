@@ -141,5 +141,6 @@
         <file>interface/qml/screens/info.qml</file>
         <file>othos_icon.icns</file>
         <file>interface/assets/dialpad_1vm.png</file>
+        <file>interface/qml/screens/video.qml</file>
     </qresource>
 </RCC>

@@ -1,6 +1,6 @@
 #ifndef SCREENSETTINGS_H
 #define SCREENSETTINGS_H
-
+#include <pjsua-lib/pjsua.h>
 #include <QObject>
 class Controller;
 
@@ -12,6 +12,7 @@ public:
 
     Controller *controller;
 
+    Q_INVOKABLE void showPreviewWindow(qint64 id);
     Q_INVOKABLE QString getActiveAccount();
     Q_INVOKABLE void setSettings();
     Q_INVOKABLE bool setActiveAccount(const QString &account);
@@ -20,7 +21,10 @@ public:
     Q_INVOKABLE bool setAudioDevices(const QString &inputDevice, const QString &outputDevice, const QString &ringingDevice);
     void getInputDeviceList();
     void getOutputDeviceList();
+    void getVideoDeviceList();
     bool validateSetting(const QString& settingTag);
+
+    pjmedia_vid_dev_index m_video_idx;
 signals:
     
 public slots:

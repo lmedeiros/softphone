@@ -300,7 +300,7 @@ Item
             rightMargin: 40
         }
         color: "#FF6600"
-        font.family: mainScreen.m_fontMain.name
+
         font.bold: true
         font.pointSize: 14
         text: setAccountText()

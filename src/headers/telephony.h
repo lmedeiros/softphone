@@ -29,7 +29,9 @@ public:
     static void on_call_state(pjsua_call_id call_id, pjsip_event *e);
     static void on_reg_state2(pjsua_acc_id acc, pjsua_reg_info *info);
     static void on_call_media_state(pjsua_call_id call_id);
+
     int init();
+
     Controller *controller;
     pjsua_acc_id acc_id;
     QString activeServer;
