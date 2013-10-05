@@ -33,7 +33,7 @@ Rectangle
 
         onButtonClicked:
         {
-            ControllerJS.updateSettings();
+            ControllerJS.saveAudioSettings();
         }
     }
 
@@ -103,6 +103,7 @@ Rectangle
 
         Row
         {
+            visible: false
             spacing: 6
             Text
             {
@@ -130,6 +131,7 @@ Rectangle
 
         Row
         {
+            visible: false
             spacing: 6
             Text
             {

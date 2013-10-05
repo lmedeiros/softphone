@@ -5,6 +5,7 @@
 #include <pjsua-lib/pjsua.h>
 #include <QDebug>
 #include <QSoundEffect>
+#include "videoviewer.h"
 
 class Controller;
 
@@ -41,10 +42,13 @@ class ScreenPhone : public QObject
     Q_PROPERTY(QString c1_uprate READ c1_uprate WRITE setC1_uprate NOTIFY c1_uprateChanged)
     Q_PROPERTY(QString c2_downrate READ c2_downrate WRITE setC2_downrate NOTIFY c2_downrateChanged)
     Q_PROPERTY(QString c2_uprate READ c2_uprate WRITE setC2_uprate NOTIFY c2_uprateChanged)
+    Q_PROPERTY(QString c1_loss READ c1_loss WRITE setC1_loss NOTIFY c1_lossChanged)
+    Q_PROPERTY(QString c2_loss READ c2_loss WRITE setC2_loss NOTIFY c2_lossChanged)
 
 public:
     explicit ScreenPhone(Controller *ctrl, QObject *parent = 0);
     Controller *controller;
+    VidWin* m_video_viewer;
 
     Q_INVOKABLE void keypadEvent(const QString &digit);
     Q_INVOKABLE void setVolume(const float volume, const QString &device);
@@ -76,6 +80,8 @@ public:
     void setC2_downrate(const QString& text);
     void setC1_uprate(const QString& text);
     void setC2_uprate(const QString& text);
+    void setC1_loss(const QString& text);
+    void setC2_loss(const QString& text);
 
     Q_INVOKABLE void setMiss_notify(bool show);
 
@@ -98,8 +104,12 @@ public:
     QStringList codec_list();
     QString c1_downrate();
     QString c1_uprate();
+    QString c1_loss();
+    QString c2_loss();
     QString c2_downrate();
     QString c2_uprate();
+
+    Q_INVOKABLE void showVideoWindow(pjsua_call_id call_id);
 
     void changeChannel();
     void sendDTMF(pjsua_call_id call_id, const char *digits);
@@ -131,6 +141,8 @@ private:
     int m_mwi_info;
     QString m_c1_sip_actiontext;
     QString m_c2_sip_actiontext;
+    QString m_c1_loss;
+    QString m_c2_loss;
     int m_c1_timer;
     bool m_miss_notify;
     int m_c2_timer;
@@ -160,6 +172,8 @@ signals:
     void c1_uprateChanged(const QString&);
     void c2_downrateChanged(const QString&);
     void c2_uprateChanged(const QString&);
+    void c1_lossChanged(const QString&);
+    void c2_lossChanged(const QString&);
     
 public slots:
     

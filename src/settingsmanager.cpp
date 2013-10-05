@@ -10,6 +10,7 @@
 #include <QHash>
 #include <QtGui/QGuiApplication>
 #include <qaudiodeviceinfo.h>
+#include <pjsua-lib/pjsua.h>
 
 SettingsManager::SettingsManager(QObject *parent) :
     QObject(parent)
@@ -63,7 +64,7 @@ void SettingsManager::parseXml(const QDomDocument& xmlDoc)
 
     QDomElement audioInputNode = audioNode.elementsByTagName("inputdevice").at(0).toElement();
     QDomElement audioOuputNode = audioNode.elementsByTagName("outputdevice").at(0).toElement();
-    QDomElement audioRingingNode = audioNode.elementsByTagName("ringingdevice").at(0).toElement();
+    QDomElement audiovideoNode = audioNode.elementsByTagName("videodevice").at(0).toElement();
 
     QDomElement accountNode = settingsNode.elementsByTagName("account").at(0).toElement();
 
@@ -75,8 +76,8 @@ void SettingsManager::parseXml(const QDomDocument& xmlDoc)
     m_outputDevice.m_id = audioOuputNode.elementsByTagName("id").at(0).toElement().text();
     m_outputDevice.m_name = audioOuputNode.elementsByTagName("name").at(0).toElement().text();
 
-    m_ringingDevice.m_id = audioRingingNode.elementsByTagName("id").at(0).toElement().text();
-    m_ringingDevice.m_name = audioRingingNode.elementsByTagName("name").at(0).toElement().text();
+    m_videoDevice.m_id = audiovideoNode.elementsByTagName("id").at(0).toElement().text();
+    m_videoDevice.m_name = audiovideoNode.elementsByTagName("name").at(0).toElement().text();
 
     m_active_account = accountNode.elementsByTagName("active_id").at(0).toElement().text();
 
@@ -126,10 +127,10 @@ bool SettingsManager::createXml()
                         xmlWriter->writeTextElement("name",m_inputDevice.m_name);
                     xmlWriter->writeEndElement();
                     //input end
-                    //ringing
-                    xmlWriter->writeStartElement("ringingdevice");
-                        xmlWriter->writeTextElement("id", m_ringingDevice.m_id);
-                        xmlWriter->writeTextElement("name",m_ringingDevice.m_name);
+                    //video
+                    xmlWriter->writeStartElement("videodevice");
+                        xmlWriter->writeTextElement("id", m_videoDevice.m_id);
+                        xmlWriter->writeTextElement("name",m_videoDevice.m_name);
                     xmlWriter->writeEndElement();
                 xmlWriter->writeEndElement();
                 //audio end
@@ -163,11 +164,94 @@ bool SettingsManager::writeSettings()
     return createXml();
 }
 
-QHash<QString, QVariant> SettingsManager::videoDeviceList()
-{
-    QHash<QString, QVariant> deviceList;
+#define THIS_FILE "settingsmanager.cpp"
 
-    qDebug() << "Total of video devices: " << QString::number(pjsua_vid_dev_count());
+static void vid_print_dev(int id, const pjmedia_vid_dev_info *vdi,
+                          const char *title)
+{
+    char capnames[120];
+    char formats[120];
+    const char *dirname;
+    unsigned i;
+
+    if (vdi->dir == PJMEDIA_DIR_CAPTURE_RENDER) {
+    dirname = "capture, render";
+    } else if (vdi->dir == PJMEDIA_DIR_CAPTURE) {
+    dirname = "capture";
+    } else {
+    dirname = "render";
+    }
+
+    pjmedia_vid_dev_count();
+
+    capnames[0] = '\0';
+    for (i=0; i<sizeof(int)*8 && (1 << i) < PJMEDIA_VID_DEV_CAP_MAX; ++i) {
+    if (vdi->caps & (1 << i)) {
+        const char *capname = pjmedia_vid_dev_cap_name((pjmedia_vid_dev_cap)(1 << i), NULL);
+        if (capname) {
+        if (*capnames)
+            strcat(capnames, ", ");
+        strncat(capnames, capname,
+                sizeof(capnames)-strlen(capnames)-1);
+        }
+    }
+    }
+
+    formats[0] = '\0';
+    for (i=0; i<vdi->fmt_cnt; ++i) {
+    const pjmedia_video_format_info *vfi =
+        pjmedia_get_video_format_info(NULL, vdi->fmt[i].id);
+    if (vfi) {
+        if (*formats)
+        strcat(formats, ", ");
+        strncat(formats, vfi->name, sizeof(formats)-strlen(formats)-1);
+    }
+    }
+
+    qDebug() << id << vdi->name << vdi->driver << dirname << title;
+    qDebug() << capnames;
+    qDebug() <<  formats;
+}
+
+static void vid_list_devs(void)
+{
+    unsigned i, count;
+    pjmedia_vid_dev_info vdi;
+    pj_status_t status;
+
+    qDebug() << "Video device list:";
+    count = pjmedia_vid_dev_count();
+    if (count == 0) {
+    PJ_LOG(3,(THIS_FILE, " - no device detected -"));
+    return;
+    } else {
+    qDebug() << count << " device(s) detected";
+    }
+
+    status = pjsua_vid_dev_get_info(PJMEDIA_VID_DEFAULT_RENDER_DEV, &vdi);
+    if (status == PJ_SUCCESS)
+    vid_print_dev(PJMEDIA_VID_DEFAULT_RENDER_DEV, &vdi,
+                  "(default renderer device)");
+
+    status = pjsua_vid_dev_get_info(PJMEDIA_VID_DEFAULT_CAPTURE_DEV, &vdi);
+    if (status == PJ_SUCCESS)
+    vid_print_dev(PJMEDIA_VID_DEFAULT_CAPTURE_DEV, &vdi,
+                  "(default capture device)");
+
+    for (i=0; i<count; ++i) {
+    status = pjsua_vid_dev_get_info(i, &vdi);
+    if (status == PJ_SUCCESS)
+        vid_print_dev(i, &vdi, "");
+    }
+}
+
+QList<QVariant> SettingsManager::videoDeviceList()
+{
+    QList<QVariant> deviceList;
+
+    vid_list_devs();
+
+    qDebug() << "Total of video devices: " << QString::number(pjmedia_vid_dev_count());
 
     unsigned count = 64;
     pjmedia_vid_dev_info vid_dev_info[64];
@@ -177,8 +261,8 @@ QHash<QString, QVariant> SettingsManager::videoDeviceList()
     {
         if (vid_dev_info[i].fmt_cnt && (vid_dev_info[i].dir==PJMEDIA_DIR_ENCODING || vid_dev_info[i].dir==PJMEDIA_DIR_ENCODING_DECODING))
         {
-            deviceList.insert(QString::number(vid_dev_info[i].id), QString(vid_dev_info[i].name));
-            qDebug() << "Device List Video :::::::::: " << "id: (" << QString::number(vid_dev_info[i].id) << ")" << QString(vid_dev_info[i].name);
+            deviceList.append(QString(vid_dev_info[i].name).append("::::").append(QString::number(vid_dev_info[i].id)));
+            //qDebug() << "Device List Video :::::::::: " << "id: (" << QString::number(vid_dev_info[i].id) << ")" << QString(vid_dev_info[i].name);
         }
     }
 

@@ -181,7 +181,7 @@ Item
 
                     onReleased:
                     {
-                        ControllerJS.callAnswer();
+                        ControllerJS.callAnswer(0);
                         backgroundImage.source = "../../assets/button_call_normal.png"
                     }
 
@@ -243,11 +243,11 @@ Item
                     cursorShape: "PointingHandCursor"
                     anchors.fill: parent
                     hoverEnabled: true
-                    enabled: false
+//                    enabled: false
 
                     onReleased:
                     {
-                        ControllerJS.callAnswer();
+                        ControllerJS.callAnswer(1);
                         backgroundImageVideo.source = "../../assets/button_call_normal.png"
                     }
 

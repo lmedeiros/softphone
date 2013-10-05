@@ -30,8 +30,8 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext& context, con
 Controller::Controller(int argc, char *argv[], QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(customMessageHandler);
-    app = new QGuiApplication(argc, argv);
+    //qInstallMessageHandler(customMessageHandler);
+    app = new QApplication(argc, argv);
     qmlviewer = new QQuickView();
     setScreenControllers();
     setQmlProperties();
@@ -79,6 +79,9 @@ void Controller::setQml(const QString &qmlfile, const QString &screenName)
     QString file = qmlfile;
     QString qmlfullpath = file.prepend(QML_PATH);
     const QUrl qmlurl(qmlfullpath);
+
+    if(screenName != "settings")
+        screenSettings->stopPreview();
 
     qmlcontext->setContextProperty("activeScreen", screenName);
 

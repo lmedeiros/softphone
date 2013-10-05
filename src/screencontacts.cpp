@@ -195,6 +195,13 @@ void ScreenContacts::getContact(const QString& number)
     }
 }
 
+void ScreenContacts::setNewNumber(const QString& desc, const QString& number, const QString& name)
+{
+    controller->qmlviewer->rootContext()->setContextProperty("newNumberContactDesc", desc);
+    controller->qmlviewer->rootContext()->setContextProperty("newNumberContactNumber", number);
+    controller->qmlviewer->rootContext()->setContextProperty("newNumberContactName", name);
+}
+
 void ScreenContacts::getContacts(const QString &order_by, bool order_asc, const QString &name)
 {
     if (controller->db->mydb.open())

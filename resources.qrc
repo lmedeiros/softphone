@@ -29,7 +29,6 @@
         <file>interface/qml/parts/menu.qml</file>
         <file>interface/qml/components/menubutton.qml</file>
         <file>interface/qml/screens/accounts.qml</file>
-        <file>interface/qml/screens/config.qml</file>
         <file>interface/qml/screens/contacts.qml</file>
         <file>interface/qml/screens/contacts_add.qml</file>
         <file>interface/qml/screens/contacts_edit.qml</file>
@@ -142,5 +141,6 @@
         <file>othos_icon.icns</file>
         <file>interface/assets/dialpad_1vm.png</file>
         <file>interface/qml/screens/video.qml</file>
+        <file>interface/qml/screens/audio.qml</file>
     </qresource>
 </RCC>

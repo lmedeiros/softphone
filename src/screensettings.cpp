@@ -2,7 +2,6 @@
 #include <QDebug>
 #include "headers/controller.h"
 
-
 ScreenSettings::ScreenSettings(Controller *ctrl, QObject *parent) :
     QObject(parent)
 {
@@ -13,23 +12,25 @@ void ScreenSettings::setSettings()
 {
     if(!validateSetting(controller->settings->m_inputDevice.m_id)) controller->settings->m_inputDevice.m_id = "Unknown ID";
     if(!validateSetting(controller->settings->m_inputDevice.m_name)) controller->settings->m_inputDevice.m_name = "Unknown Device";
+
     if(!validateSetting(controller->settings->m_outputDevice.m_id)) controller->settings->m_outputDevice.m_id = "Unknown ID";
     if(!validateSetting(controller->settings->m_outputDevice.m_name)) controller->settings->m_outputDevice.m_name = "Unknown Device";
-    if(!validateSetting(controller->settings->m_ringingDevice.m_id)) controller->settings->m_ringingDevice.m_id = "Unknown ID";
-    if(!validateSetting(controller->settings->m_ringingDevice.m_name)) controller->settings->m_ringingDevice.m_name = "Unknown Device";
+
     if(!validateSetting(controller->settings->m_videoDevice.m_id)) controller->settings->m_videoDevice.m_id = "Unknown ID";
     if(!validateSetting(controller->settings->m_videoDevice.m_name)) controller->settings->m_videoDevice.m_name = "Unknown Device";
+
     if(!validateSetting(controller->settings->m_active_account)) controller->settings->m_active_account = "0";
     if(!validateSetting(controller->settings->m_sip_port)) controller->settings->m_sip_port = "5061";
 
     controller->qmlviewer->rootContext()->setContextProperty("audioInputDeviceId", controller->settings->m_inputDevice.m_id);
     controller->qmlviewer->rootContext()->setContextProperty("audioInputDeviceName", controller->settings->m_inputDevice.m_name);
+
     controller->qmlviewer->rootContext()->setContextProperty("videoDeviceId", controller->settings->m_videoDevice.m_id);
     controller->qmlviewer->rootContext()->setContextProperty("videoDeviceName", controller->settings->m_videoDevice.m_name);
+
     controller->qmlviewer->rootContext()->setContextProperty("audioOutputDeviceId", controller->settings->m_outputDevice.m_id);
     controller->qmlviewer->rootContext()->setContextProperty("audioOutputDeviceName", controller->settings->m_outputDevice.m_name);
-    controller->qmlviewer->rootContext()->setContextProperty("audioRingingDeviceId", controller->settings->m_ringingDevice.m_id);
-    controller->qmlviewer->rootContext()->setContextProperty("audioRingingDeviceName", controller->settings->m_ringingDevice.m_name);
+
     controller->qmlviewer->rootContext()->setContextProperty("activeAccount", controller->settings->m_active_account);
     controller->qmlviewer->rootContext()->setContextProperty("sipPort", controller->settings->m_sip_port);
 }
@@ -63,12 +64,11 @@ bool ScreenSettings::setActiveAccount(const QString& account)
     return accountIsOk;
 }
 
-bool ScreenSettings::setAudioDevices(const QString &inputDevice, const QString &outputDevice, const QString &ringingDevice)
+bool ScreenSettings::setAudioDevices(const QString &inputDevice, const QString &outputDevice)
 {
     controller->settings->m_inputDevice.m_name = inputDevice;
     controller->settings->m_outputDevice.m_name = outputDevice;
-    controller->settings->m_ringingDevice.m_name = ringingDevice;
-    controller->telApi->ring_dev =-2;
+
     controller->telApi->input_dev =-1;
     controller->telApi->output_dev =-2;
 
@@ -83,19 +83,10 @@ bool ScreenSettings::setAudioDevices(const QString &inputDevice, const QString &
             qDebug() << "Setting input devices" << audio_device_info[i].name;
         }
 
-        if (audio_device_info[i].output_count)
+        if (audio_device_info[i].output_count && !outputDevice.compare(audio_device_info[i].name))
         {
-            if (!outputDevice.compare(audio_device_info[i].name))
-            {
-                controller->telApi->output_dev = i;
-                qDebug() << "Setting output device" << audio_device_info[i].name;
-            }
-
-            if (!ringingDevice.compare(audio_device_info[i].name))
-            {
-                controller->telApi->ring_dev = i;
-                qDebug() << "Setting ringing device" << audio_device_info[i].name;
-            }
+            controller->telApi->output_dev = i;
+            qDebug() << "Setting output device" << audio_device_info[i].name;
         }
     }
 
@@ -105,6 +96,15 @@ bool ScreenSettings::setAudioDevices(const QString &inputDevice, const QString &
         qDebug() << "Setting audio devices";
         pjsua_set_snd_dev(controller->telApi->input_dev, controller->telApi->output_dev);
     }
+
+    setSettings();
+    return controller->settings->writeSettings();
+}
+
+bool ScreenSettings::setVideoDevice(const QString &videoDeviceID, const QString &videoDeviceName)
+{
+    controller->settings->m_videoDevice.m_id = videoDeviceID;
+    controller->settings->m_videoDevice.m_name = videoDeviceName;
 
     setSettings();
     return controller->settings->writeSettings();
@@ -132,16 +132,13 @@ void ScreenSettings::getOutputDeviceList()
     QStringList model = deviceList.keys();
 
     controller->qmlviewer->rootContext()->setContextProperty("audioDeviceOutputModel", QVariant::fromValue(model));
-    controller->qmlviewer->rootContext()->setContextProperty("audioDeviceRingingModel", QVariant::fromValue(model));
 }
 
 void ScreenSettings::getVideoDeviceList()
 {
-    QHash<QString, QVariant> deviceList = this->controller->settings->videoDeviceList();
+    QList<QVariant> deviceList = this->controller->settings->videoDeviceList();
 
-    QList<QVariant> model = deviceList.values();
-
-    controller->qmlviewer->rootContext()->setContextProperty("videoDeviceModel", QVariant::fromValue(model));
+    controller->qmlviewer->rootContext()->setContextProperty("videoDeviceModel", deviceList);
 }
 
 void ScreenSettings::getSettings()
@@ -157,78 +154,63 @@ QString ScreenSettings::getActiveAccount()
     return controller->settings->m_active_account;
 }
 
-void ScreenSettings::showPreviewWindow(qint64 id)
+bool ScreenSettings::stopPreview()
 {
-//    pjsua_vid_win_info vid_win_info;
-//    pjsua_vid_win_id vid_win_id = pjsua_vid_preview_get_win(this->m_video_idx);
+    if(this->m_vid_win_info.show == PJ_TRUE && this->m_vid_dev_index != -100 && controller->screenPhone->c1_call_id()==-1)
+    {
+        qDebug() << "Stopping video preview";
+        pjsua_vid_win_set_show(this->m_vid_win_id, PJ_FALSE);
+        pjsua_vid_preview_stop(this->m_vid_dev_index);
+        this->m_vid_dev_index = -100;
+        return true;
+    }
+    return false;
+}
 
-//    this->m_video_idx = (pjmedia_vid_dev_index)dev_id;
+void ScreenSettings::showPreviewWindow(const QString& id)
+{
+    QStringList devtmp = id.split("::::");
 
-//    //this->m_video_idx = PJMEDIA_VID_DEFAULT_CAPTURE_DEV;
+    QString device_name = devtmp[0];
+    int device_id = devtmp[1].toInt();
 
-//    qDebug() << "1 - Showing preview video from device id: " << QString::number(this->m_video_idx);
+    qDebug() << "Show preview for device: " << device_name;
 
-//    pjsua_vid_preview_param vid_preview_param;
-//    pjsua_vid_preview_param_default(&vid_preview_param);
+    if(this->stopPreview()) return;
 
-//    qDebug() << "2 - Showing preview video from device id: " << QString::number(this->m_video_idx);
+    this->m_vid_dev_index = device_id;
 
-//    pjsua_vid_preview_start((int)this->m_video_idx, &vid_preview_param);
+    pj_status_t status;
+    pjsua_vid_preview_param pre_param;
 
-//    qDebug() << "3 - Showing preview video from device id: " << QString::number(this->m_video_idx);
+    pjsua_vid_preview_param_default(&pre_param);
+    pre_param.wnd_flags = PJMEDIA_VID_DEV_WND_BORDER;
 
-//    vid_win_id = pjsua_vid_preview_get_win(this->m_video_idx);
-//    pjsua_vid_win_get_info(vid_win_id, &vid_win_info);
+    status = pjsua_vid_preview_start(this->m_vid_dev_index, &pre_param);
 
-//    qDebug() << "4 - Showing preview video from device id: " << QString::number(this->m_video_idx);
+    this->m_vid_win_id = pjsua_vid_preview_get_win(this->m_vid_dev_index);
 
-//    const pjmedia_coord vid_win_pos = {0, 0};
+    const pjmedia_rect_size size = {240, 180};
+    const pjmedia_coord pos = {(controller->qmlviewer->x()+controller->qmlviewer->width()),controller->qmlviewer->y()};
+    pjsua_vid_win_set_size(m_vid_win_id, &size);
+    pjsua_vid_win_set_pos(m_vid_win_id, &pos);
 
-//    pjsua_vid_win_set_pos(vid_win_id,&vid_win_pos);
+    pjsua_vid_win_get_info(m_vid_win_id, &this->m_vid_win_info);
 
-//    qDebug() << "5 - Showing preview video from device id: " << QString::number(this->m_video_idx);
-//    pjsua_vid_win_set_show(vid_win_id, PJ_TRUE);
-
-//    qDebug() << "6 - Showing preview video from device id: " << QString::number(this->m_video_idx);
-
-//    const pjmedia_rect_size vid_win_size = {320, 240};
-//    pjsua_vid_win_set_size(vid_win_id, &vid_win_size);
-
-//    qDebug() << "¨7 - Showing preview video from device id: " << QString::number(this->m_video_idx);
-
-    pjmedia_vid_dev_index widx;
-    pjsua_vid_win_info wi;
-    pjsua_vid_win_id wid = pjsua_vid_preview_get_win(widx);
-    if (wid != PJSUA_INVALID_ID) {
-        if (widx != id) {
-            pjsua_vid_preview_stop(widx);
+    if (this->m_vid_win_id != PJSUA_INVALID_ID) {
+        if (this->m_vid_dev_index != device_id) {
+            qDebug() << "Stopping video preview Different ID";
+            pjsua_vid_preview_stop(this->m_vid_dev_index);
         } else {
+            qDebug() << "Stopping video preview no ID";
             return;
         }
     }
-    widx = id;
 
-    pjsua_vid_preview_param pre_param;
+    this->m_video_viewer = new VidWin(&this->m_vid_win_info.hwnd);
 
-    pre_param.show = PJ_TRUE;
-
-    pj_status_t status;
-    const pjmedia_coord pos = {20, 20};
-
-    pjsua_vid_preview_param_default(&pre_param);
-    pre_param.show = PJ_TRUE;
-    pre_param.wnd_flags = PJMEDIA_VID_DEV_WND_BORDER | PJMEDIA_VID_DEV_WND_RESIZABLE;
-    status = pjsua_vid_preview_start(widx, &pre_param);
     if (status != PJ_SUCCESS) {
         qDebug() << "Fail to show video";
         return;
     }
-    wid = pjsua_vid_preview_get_win(widx);
-    pjsua_vid_win_get_info(wid, &wi);
-
-    pjsua_vid_win_set_pos(wid,&pos);
-    pjsua_vid_win_set_show(wid, PJ_TRUE);
-
-    const pjmedia_rect_size size = {320, 240};
-    pjsua_vid_win_set_size( wid, &size);
 }

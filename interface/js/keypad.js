@@ -1,4 +1,4 @@
-function callAnswer()
+function callAnswer(has_video)
 {
     if(screenPhone.is_registered===0)
     {
@@ -25,7 +25,7 @@ function callAnswer()
     {
         if(screenPhone.c1_call_id < 0)
         {
-            telapi.callTo(keypadText);
+            telapi.callTo(keypadText, has_video);
         }
     }
 
@@ -33,7 +33,7 @@ function callAnswer()
     {
         if(screenPhone.c2_call_id < 0)
         {
-            telapi.callTo(keypadText);
+            telapi.callTo(keypadText, has_video);
         }
     }
 }

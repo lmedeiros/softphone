@@ -12,7 +12,7 @@ public:
 
     Q_INVOKABLE bool registerAccount(const QString &account);
     Q_INVOKABLE bool unregisterAccount();
-    Q_INVOKABLE int callTo(const QString &url);
+    Q_INVOKABLE int callTo(const QString &url, unsigned has_video);
     Q_INVOKABLE void hangUp(const int &call_id);
     Q_INVOKABLE void hold(const int &call_id);
     Q_INVOKABLE void unhold(const int &call_id);
@@ -34,6 +34,7 @@ public:
 
     Controller *controller;
     pjsua_acc_id acc_id;
+    pjsua_recorder_id rec_id;
     QString activeServer;
     QString activeUser;
     QString activeAccountID;

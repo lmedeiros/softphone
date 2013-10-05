@@ -34,6 +34,7 @@ MainScreen
 
         Item
         {
+            id: listRecs
             width: 320
             height: parent.height
 
@@ -55,79 +56,43 @@ MainScreen
             }
         }
 
-        Item
-        {
-            width: app_width - 320
-            height: parent.height
-            visible: activeFileName !== ""
-
-           Text
-            {
-                text: "Play"
-                color: "#FFF"
-                font.pixelSize: 24
-                width: 150
-                height: 80
-                anchors.centerIn: parent
-                MouseArea
-                {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: "PointingHandCursor"
-                    onClicked:
-                    {
-                        recordFile.source = "file:///" + recFilePath + "/" + activeFileName
-                        recordFile.play();
-                    }
-                }
-            }
-        }
-    }
-
-    Audio
-    {
-        id: recordFile
-
-
-        onPlaying:
-        {
-            playbackRect.visible = true
-        }
-
-        onStopped:
-        {
-            playbackRect.visible = false
-            recordFile.destroy();
-        }
-    }
-
-    Rectangle
-    {
-        id: playbackRect
-        color: "#111"
-        opacity: 0.8
-        visible: false
-        anchors.fill: mainScreen
-
         Text
         {
-            text: "Playback file: " + activeFileName + "\n\n Click to stop";
-            color: "#FFF"
-            font.pixelSize: 14
-            anchors.centerIn: parent
-        }
-
-        MouseArea
-        {
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: "PointingHandCursor"
-            onClicked:
+            anchors
             {
-                 recordFile.stop();
-                 recordFile.destroy();
+                left: listRecs.right
+                top: parent.top
+                margins: 20
             }
+
+            width: 180
+            height: 200
+            elide: Text.ElideRight
+            color: "#DDD"
+            font.pixelSize: 12
+            text: 'Folder: ' + recFilePath + '\n' +
+                  'Filename: ' + activeFileName + '\n' +
+                  'Date: ' + setDate(activeFileName) + '\n' +
+                  'Destination: ' + activeFileName.split('_')[1].toString().split('-')[0].toString();
         }
+    }
+
+    function setDate(fileName)
+    {
+        var date = fileName.split('-');
+        var date1 = date[1]
+        var date2 = date1.split('.');
+
+        date = date2[0];
+
+        var year = date.substr(0,4);
+        var month = date.substr(4,2);
+        var day = date.substr(6,2);
+        var hour = date.substr(8,2);
+        var minute = date.substr(10,2);
+        var sec = date.substr(12,2)
+
+        return day + '/' + month + '/' + year + " " + hour + ":" + minute + ":" + sec
     }
 
     Component
@@ -162,6 +127,12 @@ MainScreen
                     onClicked:
                     {
                         activeFileName = modelData;
+                        var url = "file:///" + recFilePath + "/" + modelData
+                        messageBox.text = 'Opening audio on external application';
+                        messageBox.m_color = 'white';
+                        messageBox.state = 'show';
+                        console.debug('Playing file: ' + url);
+                        screenPhone.playbackAudio(url);
                     }
                 }
 

@@ -17,12 +17,16 @@ MainScreen
     {
         if(m_activeScreen === "Audio")
         {
-            settingsLoading.source = "config.qml";
+            settingsLoading.source = "audio.qml";
         }
 
         if(m_activeScreen === "Video")
         {
             settingsLoading.source = "video.qml";
+        }
+        else
+        {
+            screenSettings.stopPreview();
         }
 
 

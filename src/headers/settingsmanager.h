@@ -14,7 +14,7 @@ public:
     void parseXml(const QDomDocument& xml);
     bool createXml();
     QHash<QString, QVariant> deviceList(bool is_input);
-    QHash<QString, QVariant> videoDeviceList();
+    QList<QVariant> videoDeviceList();
     bool writeSettings();
 
     QString m_active_account;
@@ -25,7 +25,7 @@ public:
     {
         QString m_name;
         QString m_id;
-    } m_inputDevice, m_outputDevice, m_ringingDevice;
+    } m_inputDevice, m_outputDevice;
 
     struct video_t
     {

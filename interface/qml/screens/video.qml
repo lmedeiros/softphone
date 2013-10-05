@@ -33,7 +33,7 @@ Rectangle
 
         onButtonClicked:
         {
-            //ControllerJS.updateSettings();
+            ControllerJS.saveVideoSettings();
         }
     }
 
@@ -69,24 +69,24 @@ Rectangle
                 height: 35
                 textSize: 15
                 model: videoDeviceModel
-                defaultValue: videoDeviceName
+                defaultValue: videoDeviceName + "::::" + videoDeviceId
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             PhoneActiveButton
             {
                 id: btnVideo
-                tooltip_text: "Enable video call"
+                tooltip_text: "Show video preview"
                 m_image_normal: "../../assets/Button_top_normal.png"
                 m_image_over: "../../assets/Button_top_over.png"
                 m_image_down: "../../assets/Button_top_down.png"
-                m_icon: "../../assets/ic_video_disabled.png"
+                m_icon: "../../assets/ic_video_on.png"
                 m_text: "Preview"
                 width: 45
                 height: 34
                 onButtonClicked:
                 {
-                    screenSettings.showPreviewWindow(parseInt(cboVideoDevice.selectedId));
+                    screenSettings.showPreviewWindow(cboVideoDevice.selectedData);
                 }
             }
         }

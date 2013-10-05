@@ -28,7 +28,7 @@ public:
     Q_INVOKABLE void getContacts(const QString &order_by, bool order_asc, const QString &name);
     Q_INVOKABLE bool addContact(const QString &name, const QString &surname, const QString &pic_path, const QString &account_id);
     Q_INVOKABLE bool editContact(const QString &name, const QString &surname, const QString &pic_path, const QString &contact_id);
-
+    Q_INVOKABLE void setNewNumber(const QString& desc, const QString& number, const QString &name);
 
 signals:
 

@@ -448,7 +448,7 @@ Rectangle
                     Text
                     {
                         id: netstatus
-                        text: (screenPhone.active_channel === 1) ? "Call Info: " + screenPhone.c1_stream_info + " \nDownload Rate: " + screenPhone.c1_downrate + " \nUpload Rate: " + screenPhone.c1_uprate : "Codec: " + screenPhone.c2_stream_info + " \nDownload Rate: " + screenPhone.c2_downrate + " \nUpload Rate: " + screenPhone.c2_uprate
+                        text: (screenPhone.active_channel === 1) ? "Call Info: " + screenPhone.c1_stream_info + " \nDownload Rate: " + screenPhone.c1_downrate + " \nUpload Rate: " + screenPhone.c1_uprate + " \nLoss: " + screenPhone.c1_loss : "Codec: " + screenPhone.c2_stream_info + " \nDownload Rate: " + screenPhone.c2_downrate + " \nUpload Rate: " + screenPhone.c2_uprate + " \nLoss: " + screenPhone.c2_loss
                         font.pixelSize: 13
                         visible: (screenPhone.active_channel === 1) ? (screenPhone.c1_uprate !== "") : (screenPhone.c2_uprate !== "")
                         color: "white"

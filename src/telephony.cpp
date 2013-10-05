@@ -1,6 +1,7 @@
 #include "headers/telephony.h"
 #include "headers/controller.h"
 #include <pjsua-lib/pjsua.h>
+#include <pjsua-lib/pjsua_internal.h>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
@@ -8,6 +9,10 @@
 #include <QDir>
 #define THIS_FILE "APP"
 #define APP_VERSION "3.0.0"
+
+#if defined(PJ_WIN32)
+#   define SDL_MAIN_HANDLED
+#endif
 
 
 Telephony *Telephony::telephony;
@@ -49,22 +54,30 @@ int Telephony::recordCall(int call_id)
 
     const char* file = filename.toUtf8().constData();
 
-    pjsua_recorder_id rec_id;
-
     pj_str_t rec_file = pj_str((char*)file);
     pj_status_t status = PJ_ENOTFOUND;
 
     status = pjsua_recorder_create(&rec_file, 0, NULL, 0, 0, &rec_id);
 
     if (status != PJ_SUCCESS) {
-    printf("GASP!!  record error!!\n");
+        printf("GASP!!  record error!!\n");
+        return 0;
     }
 
     pjsua_conf_port_id rec_port = pjsua_recorder_get_conf_port(rec_id);
+    pjsua_conf_connect(rec_port, ci.conf_slot);
     pjsua_conf_connect(ci.conf_slot, rec_port);
 
     return 1;
 
+}
+
+void Telephony::stopRecordCall(int call_id)
+{
+    pjsua_call_info ci;
+    pjsua_recorder_destroy(rec_id);
+    pjsua_call_get_info((pjsua_call_id)call_id, &ci);
+    pjsua_conf_disconnect(ci.conf_slot,0);
 }
 
 int Telephony::transferCall(int callId, const QString& url)
@@ -121,14 +134,6 @@ int Telephony::transferCall(int callId, const QString& url)
 
     return (int)call_id;
 }
-
-void Telephony::stopRecordCall(int call_id)
-{
-    pjsua_call_info ci;
-    pjsua_call_get_info((pjsua_call_id)call_id, &ci);
-    pjsua_conf_disconnect(ci.conf_slot,0);
-}
-
 
 void Telephony::on_call_state(pjsua_call_id call_id, pjsip_event *e)
 {
@@ -207,12 +212,33 @@ void Telephony::on_call_media_state(pjsua_call_id call_id)
     pjsua_call_info ci;
     pjsua_call_get_info(call_id, &ci);
 
-    if (ci.media_status == PJSUA_CALL_MEDIA_ACTIVE)
+    for (unsigned i=0; i<ci.media_cnt; ++i)
     {
-        telephony->controller->screenPhone->connectedCall(call_id, ci);
-        pjsua_conf_connect(ci.conf_slot, 0);
-        pjsua_conf_connect(0, ci.conf_slot);
+        if (ci.media[i].type == PJMEDIA_TYPE_AUDIO)
+        {
+            switch (ci.media[i].status)
+            {
+                case PJSUA_CALL_MEDIA_ACTIVE:
+                    telephony->controller->screenPhone->connectedCall(call_id, ci);
+                    pjsua_conf_connect(ci.media[i].stream.aud.conf_slot, 0);
+                    pjsua_conf_connect(0, ci.media[i].stream.aud.conf_slot);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else if (ci.media[i].type == PJMEDIA_TYPE_VIDEO)
+        {
+             telephony->controller->screenPhone->connectedCall(call_id, ci);
+             telephony->controller->screenPhone->showVideoWindow(call_id);
+        }
     }
+
+//    if (ci.media_status == PJSUA_CALL_MEDIA_ACTIVE)
+//    {
+//        pjsua_conf_connect(ci.conf_slot, 0);
+//        pjsua_conf_connect(0, ci.conf_slot);
+//    }
 
     if(ci.media_status == PJSUA_CALL_MEDIA_ERROR)
     {
@@ -222,6 +248,7 @@ void Telephony::on_call_media_state(pjsua_call_id call_id)
 
 void Telephony::on_mwi_info(pjsua_acc_id acc_id, pjsua_mwi_info* mwi_info)
 {
+    PJ_UNUSED_ARG(acc_id);
     qDebug() << "MWI INFO" << mwi_info->rdata->msg_info.msg->body->print_body;
     telephony->controller->screenPhone->setMwi_info(telephony->controller->screenPhone->mwi_info()+1);
 }
@@ -499,13 +526,13 @@ bool Telephony::registerAccount(const QString &account)
     p_server[server.size()] = 0;
 
     pjsua_acc_config cfg;
+    pjsua_acc_config_default(&cfg);
 
     cfg.vid_in_auto_show = PJ_TRUE;
     cfg.vid_out_auto_transmit = PJ_TRUE;
-    cfg.vid_wnd_flags = PJMEDIA_VID_DEV_WND_BORDER | PJMEDIA_VID_DEV_WND_RESIZABLE;
-
-    pjsua_acc_config_default(&cfg);
-
+    cfg.vid_cap_dev = telephony->controller->settings->m_videoDevice.m_id.toInt();
+    cfg.vid_rend_dev = PJMEDIA_VID_DEFAULT_RENDER_DEV;
+    cfg.vid_wnd_flags = PJMEDIA_VID_DEV_WND_BORDER;
     cfg.allow_via_rewrite=PJ_FALSE;
     cfg.allow_contact_rewrite=PJ_FALSE;
 
@@ -542,6 +569,49 @@ bool Telephony::registerAccount(const QString &account)
         }
     }
 
+    //Video Settings
+    unsigned count = 64;
+    {
+        unsigned bitrate;
+        const pj_str_t codec_id = {"H264", 4};
+        pjmedia_vid_codec_param param;
+        pjsua_vid_codec_get_param(&codec_id, &param);
+        param.enc_fmt.det.vid.size.w = 640;
+        param.enc_fmt.det.vid.size.h = 480;
+        param.enc_fmt.det.vid.fps.num = 30;
+        param.enc_fmt.det.vid.fps.denum = 1;
+        bitrate = 1000 * 256;
+        param.enc_fmt.det.vid.avg_bps = bitrate;
+        param.enc_fmt.det.vid.max_bps = bitrate;
+        param.dec_fmt.det.vid.size.w = 640;
+        param.dec_fmt.det.vid.size.h = 480;
+
+        param.dec_fmt.det.vid.fps.num = 30;
+        param.dec_fmt.det.vid.fps.denum = 1;
+
+        pjsua_vid_codec_set_param(&codec_id, &param);
+        pjsua_vid_codec_set_priority(&codec_id,255);
+    }
+
+    {
+        unsigned bitrate;
+        const pj_str_t codec_id = {"H263", 4};
+        pjmedia_vid_codec_param param;
+        pjsua_vid_codec_get_param(&codec_id, &param);
+        bitrate = 1000 * 256;
+        param.enc_fmt.det.vid.avg_bps = bitrate;
+        param.enc_fmt.det.vid.max_bps = bitrate;
+        pjsua_vid_codec_set_param(&codec_id, &param);
+        pjsua_vid_codec_set_priority(&codec_id,254);
+    }
+
+    pjsua_codec_info codec_info[count];
+    pjsua_vid_enum_codecs(codec_info, &count);
+    for (unsigned i=0;i<count;i++)
+    {
+        qDebug() << "Video Codec: " << codec_info[i].codec_id.ptr;
+    }
+
     telephony->controller->screenPhone->setMwi_info(0);
 
     telephony->controller->screenPhone->setRegister_reason("Trying...");
@@ -561,23 +631,23 @@ bool Telephony::registerAccount(const QString &account)
     }
 }
 
-int Telephony::callTo(const QString &url)
+int Telephony::callTo(const QString &url, unsigned has_video)
 {
 
-#ifndef _WIN32
+//#ifndef _WIN32
 
-    pj_hostent he;
-    pj_status_t has_internet;
-    pj_str_t host = pj_str((char*)activeServer.toStdString().c_str());
-    has_internet = pj_gethostbyname( &host, &he);
+//    pj_hostent he;
+//    pj_status_t has_internet;
+//    pj_str_t host = pj_str((char*)activeServer.toStdString().c_str());
+//    has_internet = pj_gethostbyname( &host, &he);
 
-    if (has_internet != PJ_SUCCESS) {
-        qDebug() << "No internet ";
-        telephony->controller->screenPhone->setIs_registered(0);
-        unregisterAccount();
-    }
+//    if (has_internet != PJ_SUCCESS) {
+//        qDebug() << "No internet ";
+//        telephony->controller->screenPhone->setIs_registered(0);
+//        unregisterAccount();
+//    }
 
-#endif
+//#endif
     if(telephony->controller->screenPhone->is_registered()==0)
     {
         qDebug() << "Error when calling, Not registered";
@@ -603,8 +673,12 @@ int Telephony::callTo(const QString &url)
 
     telephony->controller->qmlviewer->rootContext()->setContextProperty("lastDial", url);
 
-    qDebug() << "Dialling " << uri.ptr;
-    pj_status_t status = pjsua_call_make_call((pjsua_acc_is_valid(acc_id) ? acc_id : NULL), &uri, 0, NULL, NULL, &call_id);
+    pjsua_call_setting call_setting;
+    pjsua_call_setting_default(&call_setting);
+    call_setting.vid_cnt = has_video;
+
+    qDebug() << "Dialling " << uri.ptr << " with video:" << call_setting.vid_cnt;
+    pj_status_t status = pjsua_call_make_call(acc_id, &uri, &call_setting, NULL, NULL, &call_id);
 
     if (status != PJ_SUCCESS)
     {
@@ -629,6 +703,7 @@ void Telephony::hangUp(const int &call_id)
 
     if(cid>=0)
     {
+        if(rec_id!=NULL) stopRecordCall(call_id);
         pjsua_call_get_info(cid,&ci);
         pjsua_call_hangup(cid,0,0,0);
     }

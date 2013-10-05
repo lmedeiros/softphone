@@ -131,6 +131,7 @@ MainScreen
                             visible: !is_contact
                             onButtonClicked:
                             {
+                                screenContacts.setNewNumber("Number", m_to_num, txtActiveNum.text);
                                 Controller.setQml("screens/contacts.qml", "contacts");
                             }
                         }

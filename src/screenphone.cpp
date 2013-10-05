@@ -6,7 +6,8 @@
 #include <QSqlError>
 #include <QFileSystemModel>
 #include <QDirModel>
-#include <QSound>
+#include <QDesktopServices>
+#include <QUrl>
 
 ScreenPhone::ScreenPhone(Controller *ctrl, QObject *parent) :
     QObject(parent)
@@ -106,7 +107,9 @@ void ScreenPhone::playbackAudio(const QString& path)
 //    rec.setSource(QUrl(path));
 //    rec.play();
 
-    QSound::play(path);
+    QDesktopServices::openUrl(QUrl(path));
+
+    //QSound::play(path);
 }
 
 void ScreenPhone::sendDTMF(pjsua_call_id call_id, const char* digits)
@@ -152,6 +155,7 @@ void ScreenPhone::setVolume(const float volume, const QString &device)
 
 void ScreenPhone::incomingCall(pjsua_call_id &call_id, pjsua_call_info &call_info, const QString &account_id)
 {
+    PJ_UNUSED_ARG(account_id);
     if(this->c1_call_id()>=0 && this->c2_call_id()>=0)
     {
         qDebug() << "C1 busy and C2 busy";
@@ -213,6 +217,7 @@ void ScreenPhone::hangUp(pjsua_call_id &call_id, const QString &account_id)
         this->setC1_sip_actiontext("");
         this->setC1_downrate("");
         this->setC1_uprate("");
+        this->setC1_loss("");
         this->setC1_stream_info("");
 
         if(c2_call_id() >= 0)
@@ -230,6 +235,7 @@ void ScreenPhone::hangUp(pjsua_call_id &call_id, const QString &account_id)
         this->setC2_sip_actiontext("");
         this->setC2_downrate("");
         this->setC2_uprate("");
+        this->setC2_loss("");
         this->setC2_stream_info("");
 
         if(c1_call_id() >= 0)
@@ -408,11 +414,13 @@ void ScreenPhone::setNetworkRates()
 
         QStringList qbuff = QString(c1_buffer).split("\n");
 
-        qDebug() << "RTT ::::: " << QString::number(stream_stat.rtcp.rtt.last);
+        //qDebug() << "RTT ::::: " << QString::number(stream_stat.rtcp.rtt.last);
         qDebug() << "RTT ::::: " << QString(c1_buffer);
 
-        this->setC1_downrate(qbuff[5].mid(qbuff[5].indexOf("@avg=")+5));
-        this->setC1_uprate(qbuff[11].mid(qbuff[11].indexOf("@avg=")+5));
+        this->setC1_downrate(qbuff[5].mid(qbuff[5].indexOf("@avg=")+5).split('/')[1]);
+        this->setC1_uprate(qbuff[11].mid(qbuff[11].indexOf("@avg=")+5).split('/')[1]);
+
+        this->setC1_loss(qbuff[6].mid(qbuff[6].indexOf("loss=")+5).split(',')[0]);
 
         memset(&c1_buffer[0], 0, sizeof(c1_buffer));
 
@@ -439,8 +447,10 @@ void ScreenPhone::setNetworkRates()
         this->setC2_stream_info(codec.append("(").append(this->m_c2_latency).append(" ms) ").append(controller->telApi->m_transport.toUpper()));
 
         QStringList qbuff = QString(c2_buffer).split("\n");
-        this->setC2_downrate(qbuff[5].mid(qbuff[5].indexOf("@avg=")+5));
-        this->setC2_uprate(qbuff[11].mid(qbuff[11].indexOf("@avg=")+5));
+        this->setC2_downrate(qbuff[5].mid(qbuff[5].indexOf("@avg=")+5).split('/')[1]);
+        this->setC2_uprate(qbuff[11].mid(qbuff[11].indexOf("@avg=")+5).split('/')[1]);
+
+        this->setC2_loss(qbuff[6].mid(qbuff[6].indexOf("loss=")+5).split(',')[0]);
 
         memset(&c2_buffer[0], 0, sizeof(c2_buffer));
 
@@ -456,6 +466,36 @@ void ScreenPhone::setNetworkRates()
     this->setC2_uprate("0");
 }
 
+void ScreenPhone::showVideoWindow(pjsua_call_id call_id)
+{
+    pjsua_call_info cinfo;
+    unsigned i;
+
+    if (call_id == -1)
+    return;
+
+    pjsua_call_get_info(call_id, &cinfo);
+    qDebug() << "Opening video window.......";
+    for (i = 0; i < cinfo.media_cnt; ++i) {
+        if ((cinfo.media[i].type == PJMEDIA_TYPE_VIDEO) && (cinfo.media[i].dir & PJMEDIA_DIR_DECODING))
+        {
+            pjsua_vid_win_info wi;
+            pjsua_vid_win_get_info(cinfo.media[i].stream.vid.win_in, &wi);
+
+            const pjmedia_rect_size size = {320, 240};
+            const pjmedia_coord pos = {(controller->qmlviewer->x()+controller->qmlviewer->width()),controller->qmlviewer->y()+210};
+            pjsua_vid_win_set_size(cinfo.media[i].stream.vid.win_in, &size);
+            pjsua_vid_win_set_pos(cinfo.media[i].stream.vid.win_in, &pos);
+
+            this->controller->screenSettings->showPreviewWindow(controller->settings->m_videoDevice.m_name.append("::::").append(controller->settings->m_videoDevice.m_id));
+
+            this->m_video_viewer = new VidWin(&wi.hwnd);
+
+            break;
+        }
+    }
+}
+
 void ScreenPhone::connectedCall(pjsua_call_id &call_id, pjsua_call_info &call_info)
 {
     QString cinfo = QString(call_info.remote_info.ptr);
@@ -463,6 +503,11 @@ void ScreenPhone::connectedCall(pjsua_call_id &call_id, pjsua_call_info &call_in
     cinfo = cinfo.mid(0, cinfo.indexOf("@"));
     cinfo = cinfo.mid(cinfo.indexOf(":")+1);
 
+    if (call_info.media[0].type == PJMEDIA_TYPE_VIDEO)
+    {
+        qDebug() << "Video Call";
+        this->showVideoWindow(call_id);
+    }
     this->ringsound.setMuted(true);
 
     if(this->c1_call_id()==call_id)
@@ -872,6 +917,18 @@ void ScreenPhone::setC2_uprate(const QString& text)
     emit c2_uprateChanged(text);
 }
 
+void ScreenPhone::setC1_loss(const QString& text)
+{
+    m_c1_loss = text;
+    emit c1_lossChanged(text);
+}
+
+void ScreenPhone::setC2_loss(const QString& text)
+{
+    m_c2_loss = text;
+    emit c2_lossChanged(text);
+}
+
 int ScreenPhone::c1_call_id()
 {
     return m_c1_call_id;
@@ -978,3 +1035,12 @@ QString ScreenPhone::c2_uprate()
     return m_c2_uprate;
 }
 
+QString ScreenPhone::c1_loss()
+{
+    return m_c1_loss;
+}
+
+QString ScreenPhone::c2_loss()
+{
+    return m_c2_loss;
+}

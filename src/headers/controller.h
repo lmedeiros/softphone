@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QThread>
+#include <QApplication>
 #include <QtGui/QGuiApplication>
 #include <qtquick2applicationviewer.h>
 #include <QQmlContext>
@@ -24,7 +25,7 @@ class Controller : public QObject
     Q_OBJECT
 public:
     explicit Controller(int argc, char *argv[], QObject *parent = 0);
-    QGuiApplication *app;
+    QApplication *app;
     QQuickView *qmlviewer;
 
     Database *db;

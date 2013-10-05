@@ -15,6 +15,16 @@ Rectangle
         new_contact_id = screenContacts.generateContactId();
         txtName.m_input.forceActiveFocus();
         screenContacts.getNewNumbers(new_contact_id);
+
+        if(newNumberContactDesc!=="" || newNumberContactNumber!=="" || newNumberContactName!=="")
+        {
+            phoneDescription.m_text = newNumberContactDesc;
+            phoneNumber.m_text = newNumberContactNumber;
+            txtName.m_text = newNumberContactName;
+            txtSurname.m_text = '';
+        }
+
+        screenContacts.setNewNumber('','','');
     }
 
     FileDialog

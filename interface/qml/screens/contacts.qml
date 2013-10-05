@@ -17,6 +17,12 @@ MainScreen
     Component.onCompleted:
     {
         screenContacts.getContacts('name', true ,"");
+
+        if(newNumberContactDesc!=="" || newNumberContactNumber!=="")
+        {
+            contactsLoader.source = "../screens/contacts_add.qml"
+            m_loader_screen = "add"
+        }
     }
 
     Text

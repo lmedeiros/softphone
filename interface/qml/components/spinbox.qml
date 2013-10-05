@@ -51,13 +51,13 @@ Rectangle
 
                     Component.onCompleted:
                     {
-                        console.debug("looking for default index: " + index +" if "+ currentData +" = "+ defaultValue)
+                        //console.debug("looking for default index: " + index +" if "+ currentData +" = "+ defaultValue)
 
                         if(modelIdField!=="")
                         {
                             if((defaultValue.toString() == currentData) || (defaultValue.toString() == currentId))
                             {
-                                console.debug("found default index " + index )
+                                //console.debug("found default index " + index )
                                 defaultIndex = index
                                 lstItems.currentIndex = defaultIndex
                             }
@@ -66,7 +66,7 @@ Rectangle
                         {
                             if(defaultValue.toString() == modelData)
                             {
-                                console.debug("found default index " + index )
+                                //console.debug("found default index " + index )
                                 defaultIndex = index
                                 lstItems.currentIndex = defaultIndex
                             }
@@ -80,7 +80,7 @@ Rectangle
 
                 selectedData = currentItem.currentData;
                 selectedId = currentItem.currentId;
-                console.debug("currentData " + selectedId);
+                //console.debug("currentData " + selectedId);
             }
 
             Component.onCompleted:
@@ -99,15 +99,16 @@ Rectangle
             {
                 id: previous
                 width: 15
-                source: "../../assets/spinbox_up.png"
+                source: (lstItems.currentIndex>0) ? "../../assets/spinbox_up.png" : ""
                 height: parent.height /3.5
+                opacity: previousMA.containsMouse? 0.7 :1
                 MouseArea
                 {
                     id: previousMA
                     anchors.fill: parent
                     cursorShape: "PointingHandCursor"
                     hoverEnabled: true
-                    onClicked:
+                    onPressed:
                     {
                         lstItems.decrementCurrentIndex();
                     }
@@ -118,15 +119,17 @@ Rectangle
             {
                 id: next
                 width: 15
-                source: "../../assets/spinbox_down.png"
+                visible: (lstItems.currentIndex !== (lstItems.count-1))
+                source: (lstItems.currentIndex !== (lstItems.count-1)) ? "../../assets/spinbox_down.png" : ""
                 height: parent.height / 3.5
+                opacity: nextMA.containsMouse? 0.7 :1
                 MouseArea
                 {
                     id: nextMA
                     anchors.fill: parent
                     cursorShape: "PointingHandCursor"
                     hoverEnabled: true
-                    onClicked:
+                    onPressed:
                     {
                         lstItems.incrementCurrentIndex();
                     }
