@@ -21,7 +21,6 @@ Telephony::Telephony(Controller *ctrl, QObject *parent) : QObject(parent)
 {
     controller = ctrl;
     telephony = this;
-
 }
 
 void Telephony::on_incoming_call(pjsua_acc_id acc_id, pjsua_call_id call_id, pjsip_rx_data *rdata)
@@ -38,6 +37,8 @@ void Telephony::on_incoming_call(pjsua_acc_id acc_id, pjsua_call_id call_id, pjs
 
 int Telephony::recordCall(int call_id)
 {
+    qDebug() << 'Recorder running...';
+
     pjsua_call_info ci;
     pjsua_call_get_info((pjsua_call_id)call_id, &ci);
 
@@ -191,7 +192,16 @@ void Telephony::on_reg_state2(pjsua_acc_id acc,pjsua_reg_info* info)
     pjsua_acc_info acc_info;
     pjsua_acc_get_info(acc, &acc_info);
 
-    qDebug() << "Register INFO: " << QString(info->cbparam->reason.ptr);
+//    QFile logFile(QGuiApplication::applicationDirPath()+"/o2csip.log");
+
+//    if (!logFile.open(QIODevice::Append | QIODevice::Text))
+//    {
+//        qCritical() << "Read only" << " The file is in read only mode";
+//    }
+
+//    QTextStream logWriter(&logFile);
+
+//    logWriter << "[REGISTER MSG] " << info->cbparam->rdata->msg_info.msg_buf << "\n";
 
     if (acc_info.status < 300)
     {
@@ -360,13 +370,17 @@ QVector<QString> Telephony::loadAccount(const QString &account_id)
     {
         account[4] = "voip.othos.com.br";
     }
+    else if(account[4] == "Global")
+    {
+        account[4] = "684.voip.othos.net";
+    }
     else if(account[4] == "Costa Rica")
     {
         account[4] = "voip.othos.co.cr";
     }
     else if(account[4] == "Asia")
     {
-        account[4] = "voip.othos.co.za";
+        account[4] = "voip.othos.asia";
     }
     else if((account[4].startsWith("550") || account[4].startsWith("560")) && account[4].length() == 7)
     {
@@ -503,11 +517,14 @@ bool Telephony::registerAccount(const QString &account)
 
     pjmedia_srtp_use srtp = PJMEDIA_SRTP_DISABLED;
 
+    has_srtp = false;
+
     if(acc[8]!="")
     {
         if(acc[8]=="No") srtp = PJMEDIA_SRTP_DISABLED;
-        if(acc[8]=="Optional") srtp = PJMEDIA_SRTP_OPTIONAL;
-        if(acc[8]=="Required") srtp = PJMEDIA_SRTP_MANDATORY;
+        if(acc[8]=="Optional") { srtp = PJMEDIA_SRTP_OPTIONAL; has_srtp=true; }
+        if(acc[8]=="Required") { srtp = PJMEDIA_SRTP_MANDATORY;  has_srtp=true; }
+
     }
 
     strcpy(p_uri, uri.toLocal8Bit().data());
@@ -703,7 +720,7 @@ void Telephony::hangUp(const int &call_id)
 
     if(cid>=0)
     {
-        if(rec_id!=NULL) stopRecordCall(call_id);
+        //if(rec_id!=NULL) stopRecordCall(call_id);
         pjsua_call_get_info(cid,&ci);
         pjsua_call_hangup(cid,0,0,0);
     }
@@ -725,8 +742,12 @@ int Telephony::init()
       cfg.cb.on_reg_state2 = &on_reg_state2;
       cfg.cb.on_mwi_info = &on_mwi_info;
 
+      QString logFile(QGuiApplication::applicationDirPath()+"/o2csip.log");
+
       pjsua_logging_config_default(&log_cfg);
-      log_cfg.console_level = 0;
+      log_cfg.console_level = 4;
+      log_cfg.level = 4;
+      log_cfg.log_filename = pj_str((char *)logFile.toStdString().c_str());
 
       // user Agent
       char useragent[80];

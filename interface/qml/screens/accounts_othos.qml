@@ -161,7 +161,7 @@ Rectangle
             height: 35
             textSize: 17
             defaultValue: accountEditModel1[4]
-            model: ["South Africa", "Brazil", "Costa Rica", "Asia"]
+            model: ["Global","South Africa", "Brazil", "Costa Rica", "Asia"]
         }
     }
 

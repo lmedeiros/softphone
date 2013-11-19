@@ -142,5 +142,6 @@
         <file>interface/assets/dialpad_1vm.png</file>
         <file>interface/qml/screens/video.qml</file>
         <file>interface/qml/screens/audio.qml</file>
+        <file>interface/qml/screens/siplog.qml</file>
     </qresource>
 </RCC>

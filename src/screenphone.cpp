@@ -400,17 +400,24 @@ void ScreenPhone::setNetworkRates()
         pjsua_call_info cinfo;
         pjsua_call_get_info(this->m_c1_call_id, &cinfo);
 
-        pjsua_stream_info stat;
-        pjsua_call_get_stream_info(this->m_c1_call_id, cinfo.media[0].index, &stat);
+        if(!controller->telApi->has_srtp)
+        {
+            pjsua_stream_info stat;
+            pjsua_call_get_stream_info(this->m_c1_call_id, cinfo.media[0].index, &stat);
 
-        QString codec(stat.info.aud.fmt.encoding_name.ptr);
-        codec = codec.mid(0,codec.indexOf("strm")).remove(QRegExp("[^a-zA-Z\\d\\s]"));
+            QString codec(stat.info.aud.fmt.encoding_name.ptr);
+            codec = codec.mid(0,codec.indexOf("strm")).remove(QRegExp("[^a-zA-Z\\d\\s]"));
 
-        pjsua_stream_stat stream_stat;
-        pjsua_call_get_stream_stat(this->m_c1_call_id, cinfo.media[0].index, &stream_stat);
+            pjsua_stream_stat stream_stat;
+            pjsua_call_get_stream_stat(this->m_c1_call_id, cinfo.media[0].index, &stream_stat);
 
-        this->m_c1_latency = QString::number(stream_stat.rtcp.rtt.last/1000);
-        this->setC1_stream_info(codec.append("(").append(this->m_c1_latency).append(" ms) ").append(controller->telApi->m_transport.toUpper()));
+            this->m_c1_latency = QString::number(stream_stat.rtcp.rtt.last/1000);
+            this->setC1_stream_info(codec.append("(").append(this->m_c1_latency).append(" ms) ").append(controller->telApi->m_transport.toUpper()));
+        }
+        else
+        {
+            this->setC1_stream_info("SRTP Encrypted Call");
+        }
 
         QStringList qbuff = QString(c1_buffer).split("\n");
 
@@ -435,16 +442,24 @@ void ScreenPhone::setNetworkRates()
         pjsua_call_info cinfo;
         pjsua_call_get_info(this->m_c2_call_id, &cinfo);
 
-        pjsua_stream_info stat;
-        pjsua_call_get_stream_info(this->m_c2_call_id, cinfo.media[0].index, &stat);
+        if(!controller->telApi->has_srtp)
+        {
+            pjsua_stream_info stat;
+            pjsua_call_get_stream_info(this->m_c2_call_id, cinfo.media[0].index, &stat);
 
-        QString codec(stat.info.aud.fmt.encoding_name.ptr);
-        codec = codec.mid(0,codec.indexOf("strm")).remove(QRegExp("[^a-zA-Z\\d\\s]"));
+            QString codec(stat.info.aud.fmt.encoding_name.ptr);
+            codec = codec.mid(0,codec.indexOf("strm")).remove(QRegExp("[^a-zA-Z\\d\\s]"));
 
-        pjsua_stream_stat stream_stat;
-        pjsua_call_get_stream_stat(this->m_c2_call_id, cinfo.media[0].index, &stream_stat);
-        this->m_c2_latency = QString::number(stream_stat.rtcp.rtt.last/1000);
-        this->setC2_stream_info(codec.append("(").append(this->m_c2_latency).append(" ms) ").append(controller->telApi->m_transport.toUpper()));
+            pjsua_stream_stat stream_stat;
+            pjsua_call_get_stream_stat(this->m_c2_call_id, cinfo.media[0].index, &stream_stat);
+
+            this->m_c2_latency = QString::number(stream_stat.rtcp.rtt.last/1000);
+            this->setC2_stream_info(codec.append("(").append(this->m_c2_latency).append(" ms) ").append(controller->telApi->m_transport.toUpper()));
+        }
+        else
+        {
+            this->setC1_stream_info("SRTP Encrypted Call");
+        }
 
         QStringList qbuff = QString(c2_buffer).split("\n");
         this->setC2_downrate(qbuff[5].mid(qbuff[5].indexOf("@avg=")+5).split('/')[1]);

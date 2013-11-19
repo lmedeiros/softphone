@@ -2,6 +2,7 @@
 #define TELEPHONY_H
 #include <pjsua-lib/pjsua.h>
 #include <QObject>
+#include <QTextStream>
 class Controller;
 
 class Telephony : public QObject
@@ -44,6 +45,8 @@ public:
     pjsua_transport_id t_tcp;
 
     QString m_transport;
+
+    bool has_srtp;
 
     int input_dev;
     int output_dev;

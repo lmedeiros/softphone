@@ -1,5 +1,8 @@
 #include "headers/controller.h"
 #include <QFile>
+#include "headers/fileio.h"
+#include <QQmlEngine>
+#include <QtQuick/QQuickPaintedItem>
 #include <QTextStream>
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
@@ -27,7 +30,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext& context, con
     ts << txt << endl;
 }
 
-Controller::Controller(int argc, char *argv[], QObject *parent) :
+Q_DECL_EXPORT Controller::Controller(int argc, char *argv[], QObject *parent) :
     QObject(parent)
 {
     //qInstallMessageHandler(customMessageHandler);
@@ -37,6 +40,10 @@ Controller::Controller(int argc, char *argv[], QObject *parent) :
     setQmlProperties();
     startUp();
     setMainWindow();
+
+    qmlRegisterType<FileIO, 1>("FileIO", 1, 0, "FileIO");
+
+    screenSettings->setAudioDevices(settings->m_inputDevice.m_name, settings->m_outputDevice.m_name);
 }
 
 void Controller::startUp()
@@ -44,6 +51,8 @@ void Controller::startUp()
     if(telApi->init()==0)
     {
         screenSettings->setSettings();
+
+        settings->createLogFile();
 
         if(!settings->m_active_account.isEmpty() && settings->m_active_account.toInt() > 0)
         {

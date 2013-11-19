@@ -132,6 +132,7 @@ mac: LIBS += \
         $$PJSIP_LIB_PJTHIRD_DIR/libSDL2.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libSDL2_test.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libavcodec.a \
+        $$PJSIP_LIB_PJTHIRD_DIR/libx264.125.dylib \
         $$PJSIP_LIB_PJTHIRD_DIR/libavdevice.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libavfilter.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libavformat.a \
@@ -165,7 +166,8 @@ HEADERS += \
     src/headers/screenaccounts.h \
     src/headers/dbtablemobel.h \
     src/headers/database.h \
-    src/headers/videoviewer.h
+    src/headers/videoviewer.h \
+    src/headers/fileio.h
 
 SOURCES += src/main.cpp \
     src/controller.cpp \
@@ -178,7 +180,8 @@ SOURCES += src/main.cpp \
     src/screenaccounts.cpp \
     src/dbtablemobel.cpp \
     src/database.cpp \
-    src/videoviewer.cpp
+    src/videoviewer.cpp \
+    src/fileio.cpp
 
 # Please do not modify the following two lines. Required for deployment.
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)

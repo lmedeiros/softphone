@@ -28,8 +28,6 @@ function callAnswer()
         return;
     }
 
-
-
     if(keypadText==="")
     {
         if(lastDial!=="")
@@ -50,7 +48,7 @@ function callAnswer()
         console.debug("c1_call_id " + screenPhone.c1_call_id);
         if(screenPhone.c1_call_id < 0)
         {
-            telapi.callTo(keypadText);
+            telapi.callTo(keypadText,0);
             return;
         }
     }
@@ -59,7 +57,7 @@ function callAnswer()
     {
         if(screenPhone.c2_call_id < 0)
         {
-            telapi.callTo(keypadText);
+            telapi.callTo(keypadText,0);
             return;
         }
     }

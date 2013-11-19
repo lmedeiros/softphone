@@ -40,6 +40,11 @@ MainScreen
             settingsLoading.source = "accounts.qml";
         }
 
+        if(m_activeScreen === "SIP Log")
+        {
+            settingsLoading.source = "siplog.qml";
+        }
+
         if(m_activeScreen === "1")
         {
             settingsLoading.source = "accounts_othos.qml";
@@ -62,6 +67,7 @@ MainScreen
         ListElement { image: "ic_settings_accounts.png"; name: "Accounts"; }
         ListElement { image: "ic_settings_audio.png"; name: "Audio"; }
         ListElement { image: "ic_settings_video.png"; name: "Video"; }
+        ListElement { image: "tab_settings.png"; name: "SIP Log"; }
         ListElement { image: "ic_settings_info.png"; name: "Info"; }
     }
 

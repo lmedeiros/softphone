@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QHash>
+#include <QFile>
+#include <QTextStream>
 #include <QtXml/QDomDocument>
 
 class SettingsManager : public QObject
@@ -16,6 +18,10 @@ public:
     QHash<QString, QVariant> deviceList(bool is_input);
     QList<QVariant> videoDeviceList();
     bool writeSettings();
+
+    bool createLogFile();
+
+    QTextStream logWriter;
 
     QString m_active_account;
 

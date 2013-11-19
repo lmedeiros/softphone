@@ -5,6 +5,7 @@
 #include <QtXml/QDomElement>
 #include <QXmlStreamWriter>
 #include <QFile>
+#include <QDateTime>
 #include <QDebug>
 #include <QTextStream>
 #include <QHash>
@@ -21,22 +22,6 @@ SettingsManager::SettingsManager(QObject *parent) :
 void SettingsManager::loadSettings()
 {
     qDebug() << "Loading settings...";
-
-    unsigned count = 64;
-    pjmedia_aud_dev_info aud_dev_info[64];
-    pjsua_enum_aud_devs(aud_dev_info, &count);
-    for (unsigned i=0;i<count;i++)
-    {
-        if(aud_dev_info[i].output_count>0)
-        {
-            qDebug() << "Debug audio SPK: " << aud_dev_info[i].name;
-        }
-        else
-        {
-            qDebug() << "Debug audio MIC: " << aud_dev_info[i].name;
-        }
-
-    }
 
     QFile xmlFile(QGuiApplication::applicationDirPath()+"/settings.xml");
     QDomDocument xmlDoc;
@@ -162,6 +147,26 @@ bool SettingsManager::createXml()
 bool SettingsManager::writeSettings()
 {
     return createXml();
+}
+
+bool SettingsManager::createLogFile()
+{
+
+    QFile logFile(QGuiApplication::applicationDirPath()+"/o2csip.log");
+
+    if (!logFile.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+        qCritical() << "Read only" << " The file is in read only mode";
+        return false;
+    }
+
+    logWriter.setDevice(&logFile);
+
+    QDateTime cdate = QDateTime::currentDateTime();
+
+    logWriter << "Starting log...\t\t\t\t" << cdate.toString("hh:mm dd/MM/yyyy") << "\n\n";
+
+    return true;
 }
 
 #define THIS_FILE "settingsmanager.cpp"

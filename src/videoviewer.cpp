@@ -77,14 +77,14 @@ bool VidWin::event(QEvent *e)
     break;
 
     case QEvent::Show:
-    show_sdl(true);
+    //show_sdl(true);
     // revert to default size hint, make it resizable
-    setFixedSize(320, 640);
+    //setFixedSize(320, 640);
     break;
 
     case QEvent::Hide:
 
-    show_sdl(false);
+    //show_sdl(false);
     break;
 
     default:
