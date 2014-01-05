@@ -56,7 +56,7 @@ MainScreen
 
         onVisibleChanged:
         {
-            contactListView = !visible;
+            contactListView.visible = !visible;
             if(visible)
             {
                 m_name = ""
