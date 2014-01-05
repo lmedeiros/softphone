@@ -11,7 +11,8 @@
 *.dylib
 
 # Qt-es
-
+lib/*
+lib
 *.pro.user
 *.pro.user.*
 moc_*.cpp

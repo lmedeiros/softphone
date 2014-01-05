@@ -29,7 +29,7 @@ win32 {
 mac {
     PJSIP_DIR = $$_PRO_FILE_PWD_/lib/mac/pjsip
     LIBS_DIR = $$_PRO_FILE_PWD_/lib/win32/
-    PJSIP_TARGET = i386-apple-darwin12.4.0.a
+    PJSIP_TARGET = i386-apple-darwin13.0.0.a
     PJSIP_LIB_PJLIB_DIR = $$PJSIP_DIR/pjlib/lib
     PJSIP_LIB_PJLIBUTIL_DIR = $$PJSIP_DIR/pjlib-util/lib
     PJSIP_LIB_PJMEDIA_DIR = $$PJSIP_DIR/pjmedia/lib
@@ -108,7 +108,8 @@ LIBS += $$PJSIP_LIB_PJSIP_DIR/libpjsua-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJLIB_DIR/libpj-$$PJSIP_TARGET \
 
 #PJSIP Third Party
-LIBS += $$PJSIP_LIB_PJTHIRD_DIR/libportaudio-$$PJSIP_TARGET \
+LIBS += \
+        $$PJSIP_LIB_PJTHIRD_DIR/libportaudio-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libgsmcodec-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libilbccodec-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libspeex-$$PJSIP_TARGET \
@@ -117,9 +118,15 @@ LIBS += $$PJSIP_LIB_PJTHIRD_DIR/libportaudio-$$PJSIP_TARGET \
         $$PJSIP_LIB_PJTHIRD_DIR/libsrtp-$$PJSIP_TARGET \
 
 mac: LIBS += \
+        -framework CoreAudio \
+        -framework AudioToolbox \
+        -framework AudioUnit \
         -framework ForceFeedback \
+        -framework AppKit \
+        -framework QTKit \
         -framework IOkit \
         -framework Carbon \
+        -framework CoreVideo \
         -framework VideoDecodeAcceleration \
         -framework VideoToolbox \
         /usr/lib/libz.dylib \
@@ -142,7 +149,6 @@ mac: LIBS += \
         $$PJSIP_LIB_PJTHIRD_DIR/libswresample.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libswscale.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libmp3lame.a \
-        $$PJSIP_LIB_PJTHIRD_DIR/libx264.dylib \
         $$PJSIP_LIB_PJTHIRD_DIR/libxvidcore.a \
         $$PJSIP_LIB_PJTHIRD_DIR/liblzma.a \
         $$PJSIP_LIB_PJTHIRD_DIR/libfaac.a \
